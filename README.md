@@ -4,10 +4,10 @@ Kryten playlist management service - handles video queue and playlist operations
 
 ## Features
 
-- Real-time chat message monitoring
-- User tracking and management
+- Real-time playlist management
+- Video queue operations
 - Event-driven architecture using NATS
-- Extensible moderation rules
+- Playlist synchronization
 
 ## Installation
 
@@ -34,8 +34,8 @@ cp config.example.json config.json
 ```json
 {
   "nats_url": "nats://localhost:4222",
-  "nats_subject_prefix": "cytube",
-  "service_name": "kryten-playlist"
+  "nats_subject_prefix": "kryten",
+  "service_name": "playlist"
 }
 ```
 

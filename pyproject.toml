@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "kryten-playlist"
-version = "0.1.0"
+version = "0.1.1"
 description = "Kryten playlist management service - handles video queue and playlist operations"
 authors = ["Kryten Robot Team"]
 readme = "README.md"
