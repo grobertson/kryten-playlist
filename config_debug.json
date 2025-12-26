@@ -1,0 +1,7 @@
+{
+  "namespace": "default",
+  "sqlite_path": "./data/catalog.db",
+  "http_host": "127.0.0.1",
+  "http_log_level": "warning",
+  "debug": true
+}

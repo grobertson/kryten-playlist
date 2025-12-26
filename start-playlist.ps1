@@ -15,4 +15,4 @@ if (Test-Path ".venv/Scripts/Activate.ps1") {
 }
 
 # Start the service
-poetry run kryten-playlist --config config.json
+poetry run kryten-playlist --config config.json --web

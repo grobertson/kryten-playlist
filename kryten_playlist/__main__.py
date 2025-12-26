@@ -34,6 +34,11 @@ def parse_args() -> argparse.Namespace:
         default="INFO",
         help="Logging level (default: INFO)",
     )
+    parser.add_argument(
+        "--web",
+        action="store_true",
+        help="Run FastAPI web UI/API alongside the NATS service",
+    )
     return parser.parse_args()
 
 
@@ -45,17 +50,18 @@ async def main_async() -> None:
     logger = logging.getLogger(__name__)
     logger.info("Starting Kryten Playlist Service")
 
-    service = PlaylistService(config_path=args.config)
+    service = PlaylistService(config_path=args.config, enable_web=args.web)
 
-    # Setup signal handlers
+    # Setup signal handlers (Unix only - Windows uses KeyboardInterrupt)
     loop = asyncio.get_event_loop()
 
     def signal_handler(sig: int) -> None:
-        logger.info(f"Received signal {sig}, shutting down...")
+        logger.info("Received signal %s, shutting down...", sig)
         asyncio.create_task(service.stop())
 
-    for sig in (signal.SIGTERM, signal.SIGINT):
-        loop.add_signal_handler(sig, lambda s=sig: signal_handler(s))
+    if sys.platform != "win32":
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            loop.add_signal_handler(sig, lambda s=sig: signal_handler(s))
 
     try:
         await service.start()
@@ -63,7 +69,7 @@ async def main_async() -> None:
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt received")
     except Exception as e:
-        logger.error(f"Service error: {e}", exc_info=True)
+        logger.error("Service error: %s", e, exc_info=True)
         sys.exit(1)
     finally:
         await service.stop()

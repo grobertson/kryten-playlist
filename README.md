@@ -8,6 +8,7 @@ Kryten playlist management service - handles video queue and playlist operations
 - Video queue operations
 - Event-driven architecture using NATS
 - Playlist synchronization
+- **Catalog Management**: Ingest and enrich media catalogs with LLM-powered metadata
 
 ## Installation
 
@@ -57,6 +58,39 @@ Using the startup script (Bash):
 ```bash
 ./start-playlist.sh
 ```
+
+### Catalog Management
+
+Kryten Playlist includes tools to manage and enrich your media catalog.
+
+#### Ingest
+Ingest catalog from a MediaCMS instance:
+
+```bash
+# Using config file (recommended)
+poetry run kryten-ingest --config config.json
+
+# Or with manual arguments
+poetry run kryten-ingest --base-url https://mediacms.example.com --db data/catalog.db
+```
+
+#### Enrich
+Enrich metadata using LLM (OpenAI, Anthropic, OpenRouter, etc.):
+
+```bash
+# Enrich all unenriched items (recommended)
+poetry run kryten-enrich --config config.json
+
+# Manual enrichment with specific model
+export LLM_API_KEY="your-key-here"
+poetry run kryten-enrich --model gpt-4o --limit 100 --verify
+```
+
+**Options:**
+- `--verify`: Enable 2-pass verification (double-checks facts with LLM)
+- `--tv-only` / `--movies-only`: Filter by type
+- `--dry-run`: Preview changes without saving
+- `--force-all`: Re-process items even if already enriched
 
 ### Command Line Options
 

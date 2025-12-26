@@ -1,0 +1,42 @@
+{
+  "api-key": "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",
+  "api-base": "https://openrouter.ai/api/v1",
+  "model": "mistralai/mistral-small-24b-instruct-2501",
+  "timeout": 240.0,
+  "alternate-api-key": null,
+  "alternate-api-base": null,
+  "alternate-model": null,
+  "verify-api-key": null,
+  "verify-api-base": null,
+  "verify-model": null,
+  "rate-limit-delay": 1.2,
+  "humanizer-jitter": 300,
+  "single": {
+    "dry-run": true
+  },
+  "sample": {
+    "count": 5,
+    "dry-run": true,
+    "tv-only": false,
+    "movies-only": false,
+    "unenriched-only": false,
+    "enriched-only": false,
+    "concurrency": 4,
+    "batch-size": 100,
+    "verify-model": null
+  },
+  "batch": {
+    "tv-only": false,
+    "movies-only": false,
+    "limit": null,
+    "delay": 0.5,
+    "concurrency": 1,
+    "dry-run": false,
+    "force-all": false,
+    "raw-output": false,
+    "random-order": false,
+    "verify": false,
+    "batch-size": 100,
+    "verify-model": null
+  }
+}
