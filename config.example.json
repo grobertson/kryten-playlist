@@ -1,19 +1,41 @@
 {
+  "service_name": "playlist",
+  "log_level": "INFO",
+  "namespace": "default",
   "nats_url": "nats://localhost:4222",
   "nats_subject_prefix": "kryten",
-  "service_name": "playlist",
-  "namespace": "default",
+  "cytube_domain": "cytu.be",
+  "cytube_channel": "lounge",
   "sqlite_path": "./data/catalog.sqlite3",
   "http_host": "127.0.0.1",
   "http_port": 8088,
-  "cytube_domain": "cytu.be",
-  "cytube_channel": "lounge",
-
+  "http_log_level": "warning",
+  "disable_auth": false,
+  "initial_admins": [
+    "admin_user"
+  ],
+  "blessed_users": [
+    "trusted_user"
+  ],
   "otp_ttl_seconds": 300,
   "otp_lockout_seconds": 3600,
   "otp_length": 8,
   "otp_unsolicited_block_hours_default": 72,
   "session_ttl_seconds": 43200,
-
-  "initial_admins": ["your_cytube_username"]
+  "catalog_refresh_watcher_enabled": true,
+  "catalog_refresh_watcher_poll_seconds": 2.0,
+  "catalog_refresh_run_on_marker": true,
+  "mediacms_manifest_base_url": "https://mediacms.example.com/media",
+  "api_key": "sk-...",
+  "api_base": "https://api.openai.com/v1",
+  "model": "gpt-4o-mini",
+  "timeout": 240.0,
+  "rate_limit_delay": 0.0,
+  "humanizer_jitter": 0,
+  "alternate_api_key": "sk-...",
+  "alternate_api_base": "https://api.openai.com/v1",
+  "alternate_model": "gpt-4o",
+  "verify_api_key": "sk-...",
+  "verify_api_base": "https://api.openai.com/v1",
+  "verify_model": "gpt-4o"
 }

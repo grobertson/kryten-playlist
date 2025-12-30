@@ -81,6 +81,11 @@ class Config:
         return int(self.get("http_port", 8088))
 
     @property
+    def log_level(self) -> str:
+        """Service log level (debug, info, warning, error)."""
+        return self.get("log_level", "INFO").upper()
+
+    @property
     def http_log_level(self) -> str:
         """HTTP server log level (debug, info, warning, error)."""
         return self.get("http_log_level", "warning")

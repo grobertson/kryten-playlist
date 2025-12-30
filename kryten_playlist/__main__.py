@@ -7,6 +7,7 @@ import signal
 import sys
 from pathlib import Path
 
+from kryten_playlist.config import Config
 from kryten_playlist.service import PlaylistService
 
 
@@ -31,7 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        default="INFO",
+        default=None,
         help="Logging level (default: INFO)",
     )
     parser.add_argument(
@@ -45,7 +46,18 @@ def parse_args() -> argparse.Namespace:
 async def main_async() -> None:
     """Main async entry point."""
     args = parse_args()
-    setup_logging(args.log_level)
+
+    # Load config to check for log level
+    try:
+        config = Config(args.config)
+        config_log_level = config.log_level
+    except Exception:
+        config_log_level = "INFO"
+
+    # Determine log level: CLI arg > Config > Default
+    log_level = args.log_level or config_log_level or "INFO"
+    
+    setup_logging(log_level)
 
     logger = logging.getLogger(__name__)
     logger.info("Starting Kryten Playlist Service")

@@ -40,12 +40,13 @@ class KvJson:
             BUCKET_LIKES,
         ):
             try:
-                await self._client.get_kv_bucket(bucket)
-                logger.debug(f"KV bucket {bucket} already exists")
-            except Exception:
-                # Bucket doesn't exist, but we can't create it via KrytenClient
-                # This is expected behavior - buckets should be created by the robot
-                logger.debug(f"KV bucket {bucket} not found, will use direct KV operations")
+                # Use get_or_create_kv_bucket to ensure buckets exist.
+                # Since kryten-py 0.9.7, get_kv_bucket no longer auto-creates buckets.
+                # These buckets are owned by kryten-playlist, so we should create them.
+                await self._client.get_or_create_kv_bucket(bucket)
+                logger.debug(f"KV bucket {bucket} ensured")
+            except Exception as e:
+                logger.error(f"Failed to ensure KV bucket {bucket}: {e}")
 
     async def get_json(self, bucket: str, key_suffix: str) -> Any | None:
         return await self._client.kv_get(

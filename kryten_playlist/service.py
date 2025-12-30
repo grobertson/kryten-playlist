@@ -517,8 +517,12 @@ class PlaylistService:
         if self._catalog_refresh_task is not None:
             logger.debug("Cancelling catalog refresh task")
             self._catalog_refresh_task.cancel()
-            with contextlib.suppress(Exception):
-                await self._catalog_refresh_task
+            try:
+                await asyncio.wait_for(self._catalog_refresh_task, timeout=2.0)
+            except (asyncio.TimeoutError, asyncio.CancelledError):
+                logger.warning("Catalog refresh task timed out or cancelled")
+            except Exception as e:
+                logger.error(f"Error waiting for catalog refresh task: {e}")
             logger.debug("Catalog refresh task cancelled")
 
         # Disconnect from NATS
@@ -635,14 +639,7 @@ class PlaylistService:
         )
         self._web_server = uvicorn.Server(uv_cfg)
 
-        uv_cfg = uvicorn.Config(
-            app,
-            host=self.config.http_host,
-            port=self.config.http_port,
-            log_level=self.config.http_log_level,
-            timeout_keep_alive=5,
-        )
-        self._web_server = uvicorn.Server(uv_cfg)
+
 
         # Apply log filter via log_config customization instead of monkey-patching
         # This is safer and avoids potential issues with Uvicorn internals
