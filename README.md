@@ -23,7 +23,7 @@ Kryten playlist management service - handles video queue and playlist operations
 
 1. Install dependencies:
 ```bash
-poetry install
+uv sync
 ```
 
 2. Copy the example configuration:
@@ -46,7 +46,7 @@ cp config.example.json config.json
 
 Using Poetry:
 ```bash
-poetry run kryten-playlist --config config.json
+uv run kryten-playlist --config config.json
 ```
 
 Using the startup script (PowerShell):
@@ -68,10 +68,10 @@ Ingest catalog from a MediaCMS instance:
 
 ```bash
 # Using config file (recommended)
-poetry run kryten-ingest --config config.json
+uv run kryten-ingest --config config.json
 
 # Or with manual arguments
-poetry run kryten-ingest --base-url https://mediacms.example.com --db data/catalog.db
+uv run kryten-ingest --base-url https://mediacms.example.com --db data/catalog.db
 ```
 
 #### Enrich
@@ -79,11 +79,11 @@ Enrich metadata using LLM (OpenAI, Anthropic, OpenRouter, etc.):
 
 ```bash
 # Enrich all unenriched items (recommended)
-poetry run kryten-enrich --config config.json
+uv run kryten-enrich --config config.json
 
 # Manual enrichment with specific model
 export LLM_API_KEY="your-key-here"
-poetry run kryten-enrich --model gpt-4o --limit 100 --verify
+uv run kryten-enrich --model gpt-4o --limit 100 --verify
 ```
 
 **Options:**
@@ -111,19 +111,19 @@ The service currently listens for:
 ### Running Tests
 
 ```bash
-poetry run pytest
+uv run pytest
 ```
 
 ### Linting
 
 ```bash
-poetry run ruff check .
+uv run ruff check .
 ```
 
 ### Formatting
 
 ```bash
-poetry run black .
+uv run black .
 ```
 
 ## License

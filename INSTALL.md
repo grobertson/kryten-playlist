@@ -19,7 +19,7 @@ cd kryten-playlist
 ### 2. Install Dependencies
 
 ```bash
-poetry install
+uv sync
 ```
 
 ### 3. Configure the Service
@@ -45,7 +45,7 @@ Edit `config.json` with your settings:
 **Development mode:**
 
 ```bash
-poetry run kryten-playlist --config config.json --log-level DEBUG
+uv run kryten-playlist --config config.json --log-level DEBUG
 ```
 
 **Using startup script (PowerShell):**
@@ -105,7 +105,7 @@ sudo chown kryten:kryten /var/log/kryten-playlist
 ```bash
 cd /opt/kryten-playlist
 sudo -u kryten git clone https://github.com/grobertson/kryten-playlist.git .
-sudo -u kryten poetry install --no-dev
+sudo -u kryten uv sync --no-dev
 ```
 
 ### Systemd Service
@@ -132,7 +132,7 @@ sudo journalctl -u kryten-playlist -f
 
 ```bash
 git pull
-poetry install
+uv sync
 ```
 
 ### Production
@@ -141,7 +141,7 @@ poetry install
 cd /opt/kryten-playlist
 sudo systemctl stop kryten-playlist
 sudo -u kryten git pull
-sudo -u kryten poetry install --no-dev
+sudo -u kryten uv sync --no-dev
 sudo systemctl start kryten-playlist
 ```
 
@@ -173,7 +173,7 @@ sudo journalctl -u kryten-playlist --since "1 hour ago" | grep -i error
 python -m json.tool config.json
 
 # Test connection manually
-poetry run kryten-playlist --config config.json --log-level DEBUG
+uv run kryten-playlist --config config.json --log-level DEBUG
 ```
 
 ### Permissions Issues
