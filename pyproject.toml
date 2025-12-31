@@ -10,6 +10,11 @@ dependencies = [ "kryten-py>=0.10.5", "fastapi>=0.115.0,<0.116.0", "uvicorn>=0.3
 [[project.authors]]
 name = "Kryten Robot Team"
 
+[project.urls]
+Homepage = "https://github.com/grobertson/kryten-playlist"
+Repository = "https://github.com/grobertson/kryten-playlist"
+Issues = "https://github.com/grobertson/kryten-playlist/issues"
+
 [build-system]
 requires = [ "hatchling",]
 build-backend = "hatchling.build"
