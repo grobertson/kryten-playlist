@@ -331,16 +331,16 @@ async def get_session(
     session_id = request.cookies.get("kryten_playlist_session")
     if not session_id:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    
+
     session_doc = await kv.get_json(BUCKET_AUTH, f"session/{session_id}")
     if not session_doc:
         raise HTTPException(status_code=401, detail="Invalid session")
-    
+
     # Check if session is expired
     exp_raw = session_doc.get("expires_at")
     if not exp_raw:
         raise HTTPException(status_code=401, detail="Invalid session")
-    
+
     exp = parse_iso(exp_raw)
     if exp <= utcnow():
         # Session expired, clean it up
@@ -349,7 +349,7 @@ async def get_session(
         except Exception:
             pass
         raise HTTPException(status_code=401, detail="Session expired")
-    
+
     return SessionOut(
         username=session_doc.get("username", ""),
         role=session_doc.get("role", "viewer"),

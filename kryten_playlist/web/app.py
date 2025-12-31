@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from kryten_playlist.web.routes import auth, catalog, marathon, nowplaying, playlists, queue, stats
 from kryten_playlist.web.ui import router as ui_router
@@ -32,14 +32,14 @@ def create_app() -> FastAPI:
         assets_dir = frontend_dist / "assets"
         if assets_dir.exists():
             app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="frontend-assets")
-        
+
         # Catch-all for SPA client-side routing
         @app.get("/{full_path:path}")
         async def serve_spa(full_path: str):
             # Don't intercept API routes
             if full_path.startswith("api/"):
                 raise HTTPException(status_code=404)
-            
+
             # Serve index.html for all other routes (SPA handles routing)
             index_file = frontend_dist / "index.html"
             if index_file.exists():

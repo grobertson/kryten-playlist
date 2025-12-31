@@ -39,7 +39,7 @@ async def get_nowplaying(
     client=Depends(get_client),
 ) -> Optional[NowPlayingOut]:
     """Get the currently playing item.
-    
+
     Returns the current item being played on the CyTube channel,
     or null if nothing is playing.
     """
@@ -49,13 +49,13 @@ async def get_nowplaying(
         return None
 
     bucket = f"kryten_{channel}_playlist"
-    
+
     # Fetch current from KV
     current_raw = await client.kv_get(bucket, "current", default=None, parse_json=True)
-    
+
     if not current_raw:
         return None
-    
+
     return NowPlayingOut(
         uid=current_raw.get("uid"),
         id=current_raw.get("id"),

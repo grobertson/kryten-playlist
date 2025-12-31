@@ -25,22 +25,22 @@ def generate_snapshot_id() -> str:
 
 def generate_manifest_url(video_id: str, base_url: str = DEFAULT_MEDIACMS_BASE_URL) -> str | None:
     """Generate a Cytube manifest URL for a given video ID.
-    
+
     Args:
         video_id: The video ID string.
         base_url: The base URL of the MediaCMS instance.
-        
+
     Returns:
         The complete manifest URL string, or None if video_id is invalid.
     """
     vid = (video_id or "").strip()
     if not vid:
         return None
-        
+
     if not VIDEO_ID_PATTERN.match(vid):
         # Invalid format
         return None
-        
+
     base = base_url.rstrip("/")
     return f"{base}/api/v1/media/cytube/{vid}.json?format=json"
 

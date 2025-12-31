@@ -3,10 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from kryten_playlist.catalog.models import generate_manifest_url
 from kryten_playlist.nats.kv import BUCKET_PLAYLISTS, KvJson
 from kryten_playlist.storage.catalog_repo import CatalogRepository
-from kryten_playlist.catalog.models import generate_manifest_url
-
 
 QueueApplyMode = Literal["preserve_current", "append", "hard_replace", "insert_next"]
 
@@ -96,16 +95,16 @@ async def apply_playlist_to_queue(
     manifest_urls: list[str] = []
     for vid in video_ids:
         item = by_id.get(vid)
-        
+
         # If the item is not in the catalog, we might still be able to generate a manifest URL if we trust the video_id.
         # However, it's safer to only allow items that are in our catalog.
-        
+
         if not item:
             failed.append({"video_id": vid, "error": "Item not found in catalog"})
             continue
 
         manifest_url = generate_manifest_url(vid)
-        
+
         if not manifest_url:
             failed.append({"video_id": vid, "error": "Could not generate manifest URL"})
             continue
@@ -135,7 +134,7 @@ async def apply_playlist_to_queue(
                 except ValueError:
                     failed.append({"video_id": "", "reason": f"cannot_delete_uid:{uid_str}"})
                     continue
-                
+
                 await client.send_command(
                     service="robot",
                     type="rmvideo",

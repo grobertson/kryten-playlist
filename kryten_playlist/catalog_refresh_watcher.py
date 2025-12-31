@@ -4,7 +4,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Callable, Awaitable
+from typing import Any, Awaitable, Callable
 
 import aiosqlite
 

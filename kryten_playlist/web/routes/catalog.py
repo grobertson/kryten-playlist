@@ -4,9 +4,14 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from kryten_playlist.domain.schemas import CatalogItemOut, CatalogSearchOut, CategoriesOut, PendingCountOut
+from kryten_playlist.domain.schemas import (
+    CatalogItemOut,
+    CatalogSearchOut,
+    CategoriesOut,
+    PendingCountOut,
+)
 from kryten_playlist.storage.catalog_repo import CatalogRepository
-from kryten_playlist.web.deps import get_config, get_sqlite, require_session, Session
+from kryten_playlist.web.deps import Session, get_config, get_sqlite, require_session
 
 router = APIRouter()
 

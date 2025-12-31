@@ -155,7 +155,7 @@ class Config:
     @property
     def blessed_users(self) -> list[str]:
         """List of usernames that can see uncategorized content.
-        
+
         If empty, only admins can see uncategorized content (if implemented that way),
         or nobody can.
         """

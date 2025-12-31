@@ -3,7 +3,6 @@
 import asyncio
 import json
 import os
-import sqlite3
 
 import httpx
 

@@ -2,26 +2,25 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Request
+from fastapi import APIRouter, Body, Depends, HTTPException
 
+from kryten_playlist.catalog.models import generate_manifest_url
 from kryten_playlist.domain.schemas import (
+    QueueAddIn,
+    QueueAddOut,
     QueueApplyIn,
     QueueApplyOut,
     QueueCurrentOut,
     QueueItemOut,
     QueueMediaOut,
-    QueueStateOut,
     QueueMoveIn,
-    QueueAddIn,
-    QueueAddOut,
+    QueueStateOut,
 )
-from kryten_playlist.catalog.models import generate_manifest_url
 from kryten_playlist.queue_apply import apply_playlist_to_queue
 from kryten_playlist.storage.catalog_repo import CatalogRepository
 from kryten_playlist.web.deps import (
     Session,
     get_client,
-    get_config,
     get_kv,
     get_service,
     get_sqlite,
@@ -44,7 +43,7 @@ async def get_queue(
     """Get the current CyTube queue (playlist) state."""
     logger.debug(f"DEBUG: get_queue called with session: {session.session_id}, role: {session.role}")
     """Get the current CyTube queue (playlist) state.
-    
+
     Note: The playlist bucket is managed by kryten-robot, not this service.
     We access it directly via the client's kv_get method, not through the
     KvJson wrapper which applies namespace prefixing.
@@ -61,7 +60,7 @@ async def get_queue(
         # Fetch items and current from KV (directly via client, not KvJson wrapper)
         items_raw = await client.kv_get(bucket, "items", default=[], parse_json=True) or []
         current_raw = await client.kv_get(bucket, "current", default=None, parse_json=True)
-        
+
         logger.debug(f"Fetched {len(items_raw)} items from KV, current={current_raw is not None}")
 
         # Parse items
@@ -156,25 +155,25 @@ async def add_to_queue(
     except Exception as e:
         logger.exception(f"Error fetching item {payload.video_id} from catalog")
         raise HTTPException(status_code=500, detail=f"Catalog error: {str(e)}")
-    
+
     if not item:
         return QueueAddOut(status="error", error="Item not found")
 
     manifest_url = generate_manifest_url(item["video_id"])
-    
+
     if not manifest_url:
         return QueueAddOut(status="error", error="Could not generate manifest URL")
-    
+
     # "next" position means "after current"
     # client.add_media handles "next" correctly if supported, or we use "end"
     position = payload.position
-    
+
     try:
         await client.add_media(channel, "cm", manifest_url, position=position)
     except Exception as e:
         logger.exception(f"Error adding media {payload.video_id} to queue")
         raise HTTPException(status_code=500, detail=f"Robot error: {str(e)}")
-    
+
     return QueueAddOut(status="ok")
 
 
@@ -196,10 +195,10 @@ async def move_queue_item(
         # Resolve inputs - payload.uid is the CyTube UID of the item to move
         uid_to_move = payload.uid
         logger.debug(f"Move request received - uid: {uid_to_move}, after_uid: {payload.after_uid}")
-        
+
         if not uid_to_move:
             raise HTTPException(status_code=400, detail="Missing uid parameter")
-        
+
         # Validate UID is a valid integer
         try:
             uid_int = int(uid_to_move)
@@ -224,13 +223,13 @@ async def move_queue_item(
         # Pass the after_uid directly to client.move_media
         # The client and robot expect 'after' to be a UID (int) or "prepend" (str)
         # Note: client.move_media argument is named 'position' but maps to 'after' in the payload
-        
+
         target = "prepend"
         if after_uid_int is not None:
             target = after_uid_int
         elif after_uid == "prepend":
             target = "prepend"
-            
+
         logger.debug(f"Moving item with UID {uid_int} after {target} on channel {channel}")
         try:
             await client.move_media(channel, uid_int, target)
@@ -274,7 +273,7 @@ async def remove_queue_item(
         raise HTTPException(status_code=503, detail="No resolved channel")
 
     logger.debug(f"Removing queue item with UID {uid} from channel {channel}")
-    
+
     # Validate UID is a valid integer
     try:
         uid_int = int(uid)

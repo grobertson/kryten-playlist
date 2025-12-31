@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from kryten_playlist.auth.otp import isoformat, parse_iso, utcnow
 from kryten_playlist.domain.schemas import (
     PlaylistCreateIn,
     PlaylistCreateOut,
@@ -16,10 +17,9 @@ from kryten_playlist.domain.schemas import (
     PlaylistUpdateIn,
     Visibility,
 )
-from kryten_playlist.auth.otp import isoformat, parse_iso, utcnow
 from kryten_playlist.nats.kv import BUCKET_PLAYLISTS
-from kryten_playlist.web.deps import Session, get_kv, get_sqlite, require_blessed, require_session
 from kryten_playlist.storage.catalog_repo import CatalogRepository
+from kryten_playlist.web.deps import Session, get_kv, get_sqlite, require_blessed, require_session
 
 router = APIRouter()
 
@@ -31,7 +31,7 @@ def _can_view_playlist(meta: dict, session: Session) -> bool:
     """Check if user can view this playlist based on visibility."""
     visibility = meta.get("visibility", "private")
     owner = meta.get("owner") or meta.get("created_by", "")
-    
+
     # Owner can always view
     if owner == session.username:
         return True
@@ -66,11 +66,11 @@ async def list_playlists(
     for playlist_id, meta in (playlists or {}).items():
         if not isinstance(meta, dict):
             continue
-        
+
         # Apply visibility filter based on access control
         if not _can_view_playlist(meta, session):
             continue
-        
+
         # Apply query filters
         if mine and (meta.get("owner") or meta.get("created_by", "")) != session.username:
             continue
@@ -78,7 +78,7 @@ async def list_playlists(
             continue
         if visibility and meta.get("visibility", "private") != visibility:
             continue
-        
+
         updated_raw = meta.get("updated_at") or meta.get("created_at")
         try:
             updated_at = parse_iso(updated_raw) if isinstance(updated_raw, str) else utcnow()
@@ -121,7 +121,7 @@ async def create_playlist(
         index = {"playlists": {}, "schema_version": CURRENT_SCHEMA_VERSION}
 
     playlists: dict[str, Any] = index.get("playlists") or {}
-    
+
     # Enforce uniqueness per owner (not global)
     for meta in playlists.values():
         if not isinstance(meta, dict):
@@ -175,11 +175,11 @@ async def get_playlist(
     doc = await kv.get_json(BUCKET_PLAYLISTS, f"playlists/{playlist_id}")
     if not doc:
         raise HTTPException(status_code=404, detail="Playlist not found")
-    
+
     # Check visibility access
     if not _can_view_playlist(doc, session):
         raise HTTPException(status_code=404, detail="Playlist not found")
-    
+
     # Parse timestamps
     try:
         created_at = parse_iso(doc.get("created_at")) if doc.get("created_at") else utcnow()
@@ -189,7 +189,7 @@ async def get_playlist(
         updated_at = parse_iso(doc.get("updated_at")) if doc.get("updated_at") else utcnow()
     except ValueError:
         updated_at = utcnow()
-    
+
     # Parse forked_from if present
     forked_from = None
     if doc.get("forked_from"):
@@ -203,32 +203,32 @@ async def get_playlist(
             "owner": ff.get("owner", ""),
             "forked_at": forked_at,
         }
-    
+
     # Parse items and enrich with catalog metadata
     items = []
     catalog_repo = CatalogRepository(sqlite_conn)
-    
+
     # Get all video IDs from items
     video_ids = []
     for item in doc.get("items", []):
         if isinstance(item, dict) and item.get("video_id"):
             video_ids.append(item["video_id"])
-    
+
     # Fetch catalog metadata for all video IDs
     catalog_items = await catalog_repo.get_items_by_video_ids(video_ids)
-    
+
     # Build enriched items
     for item in doc.get("items", []):
         if isinstance(item, dict):
             video_id = item.get("video_id", "")
             catalog_item = catalog_items.get(video_id, {})
-            
+
             items.append(PlaylistItemOut(
                 video_id=video_id,
                 title=catalog_item.get("title") or item.get("title") or video_id,
                 duration_seconds=catalog_item.get("duration_seconds") or item.get("duration_seconds"),
             ))
-    
+
     return PlaylistDetailOut(
         playlist_id=doc.get("playlist_id", playlist_id),
         name=doc.get("name", ""),
@@ -256,7 +256,7 @@ async def update_playlist(
     existing = await kv.get_json(BUCKET_PLAYLISTS, f"playlists/{playlist_id}")
     if not existing:
         raise HTTPException(status_code=404, detail="Playlist not found")
-    
+
     # Only owner can edit
     if not _can_edit_playlist(existing, session):
         raise HTTPException(status_code=403, detail="Only the playlist owner can edit")
@@ -271,7 +271,7 @@ async def update_playlist(
         name = payload.name.strip()
         if not name:
             raise HTTPException(status_code=400, detail="Playlist name is required")
-        
+
         old_name = str(existing.get("name") or "").strip()
         if name != old_name:
             for pid, meta in playlists.items():
@@ -295,7 +295,7 @@ async def update_playlist(
     now = utcnow()
     updated_at = isoformat(now)
     existing["updated_at"] = updated_at
-    
+
     # Ensure owner field exists (migration from v1)
     if "owner" not in existing:
         existing["owner"] = existing.get("created_by", session.username)
@@ -334,7 +334,7 @@ async def delete_playlist(
     existing = await kv.get_json(BUCKET_PLAYLISTS, f"playlists/{playlist_id}")
     if not existing:
         raise HTTPException(status_code=404, detail="Playlist not found")
-    
+
     # Only owner can delete
     if not _can_edit_playlist(existing, session):
         raise HTTPException(status_code=403, detail="Only the playlist owner can delete")
@@ -367,30 +367,30 @@ async def fork_playlist(
     source = await kv.get_json(BUCKET_PLAYLISTS, f"playlists/{playlist_id}")
     if not source:
         raise HTTPException(status_code=404, detail="Playlist not found")
-    
+
     # Check if the playlist is forkable (shared or public, and not your own)
     visibility = source.get("visibility", "private")
     owner = source.get("owner") or source.get("created_by", "")
-    
+
     if owner == session.username:
         raise HTTPException(status_code=400, detail="Cannot fork your own playlist")
-    
+
     if visibility == "private":
         raise HTTPException(status_code=404, detail="Playlist not found")
-    
+
     # Determine name for the fork
     source_name = source.get("name", "Untitled")
     if payload and payload.name:
         fork_name = payload.name.strip()
     else:
         fork_name = f"{source_name} (fork)"
-    
+
     # Check for name collision with user's existing playlists
     index = await kv.get_json(BUCKET_PLAYLISTS, "playlists/index")
     if not isinstance(index, dict):
         index = {"playlists": {}, "schema_version": CURRENT_SCHEMA_VERSION}
     playlists: dict[str, Any] = index.get("playlists") or {}
-    
+
     base_name = fork_name
     suffix = 1
     while True:
@@ -406,7 +406,7 @@ async def fork_playlist(
             break
         suffix += 1
         fork_name = f"{base_name} ({suffix})"
-    
+
     now = utcnow()
     created_at = isoformat(now)
     new_playlist_id = secrets.token_urlsafe(12)

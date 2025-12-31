@@ -8,14 +8,14 @@ from typing import Any, Optional
 
 from kryten import KrytenClient
 
-from kryten_playlist.config import Config
-from kryten_playlist.catalog_refresh_watcher import run_catalog_refresh_watcher
 from kryten_playlist.admin_cmds import (
     add_blessed,
     get_blessed,
     record_catalog_refresh_request,
     remove_blessed,
 )
+from kryten_playlist.catalog_refresh_watcher import run_catalog_refresh_watcher
+from kryten_playlist.config import Config
 from kryten_playlist.nats.contracts import (
     CMD_BLESSED_ADD,
     CMD_BLESSED_LIST,
@@ -28,8 +28,8 @@ from kryten_playlist.nats.kv import KvJson, KvNamespace
 from kryten_playlist.queue_apply import apply_playlist_to_queue
 from kryten_playlist.storage.schema import init_catalog_schema
 from kryten_playlist.storage.sqlite import SqliteConfig, SqliteDb
-from kryten_playlist.web.deps import resolve_role
 from kryten_playlist.web.app import create_app
+from kryten_playlist.web.deps import resolve_role
 from kryten_playlist.web.routes.stats import increment_play_count, set_current_video
 
 logger = logging.getLogger(__name__)
@@ -626,7 +626,7 @@ class PlaylistService:
         app.state.sqlite = self._sqlite_conn
         # Expose service for resolved channel access
         app.state.service = self
-        
+
         logger.info(f"DEBUG: Service config disable_auth: {self.config.disable_auth}")
         logger.info(f"DEBUG: Starting web server on {self.config.http_host}:{self.config.http_port}")
 
@@ -647,39 +647,39 @@ class PlaylistService:
         # to respect existing handlers if configured correctly, or we re-apply after.
         # Actually, simpler approach: wait for server to start loop then add filter?
         # No, Uvicorn setup is synchronous before the loop.
-        
+
         # Let's try standard logging configuration approach
         # Uvicorn uses "uvicorn.access" logger. We can just add the filter to it globally
         # BUT Uvicorn might reset it.
         # Let's revert the monkeypatch and use a standard middleware or different approach if this fails.
         # However, the user says logs are MISSING.
         # The monkeypatch might be breaking configure_logging if it expects arguments.
-        
+
         # Let's check uvicorn source or docs... configure_logging usually takes no args in Server class usage?
         # Actually, Server.configure_logging takes no arguments.
         # But maybe it's not being called? Or raising an error inside?
-        
+
         # Let's try to just run it without the complex wrapper first to restore functionality,
         # then add the filter in a safer way.
-        
-        # Reverting to simple serve, but adding filter after serve starts? 
+
+        # Reverting to simple serve, but adding filter after serve starts?
         # No, serve blocks.
-        
+
         # Better approach: Pass a log_config dict to uvicorn.Config?
         # Or just trust that if we set it on the library logger it might persist?
         # Uvicorn's default config usually overwrites handlers but might keep filters?
-        
+
         # Let's try removing the wrapper which is likely the cause of the 500/silence
         # and instead apply the filter to the 'uvicorn.access' logger *before* creating Config.
         # If that fails to persist, we can try a different way.
-        
+
         # Wait, the previous code had:
         # logging.getLogger("uvicorn.access").addFilter(...)
         # BEFORE Config.
         # And user said it didn't work (spam continued).
-        
+
         # The wrapper approach is risky. Let's fix the wrapper to be robust.
         # If original_configure_logging failed or something, that would explain it.
-        
+
         # Let's try removing the wrapper for now to get the server back up.
         await self._web_server.serve()

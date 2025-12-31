@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
 import aiosqlite
-
+import pytest
 from kryten.mock import MockKrytenClient
 
 from kryten_playlist.catalog.fake_connector import FakeConnector

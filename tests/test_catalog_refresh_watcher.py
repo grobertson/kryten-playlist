@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import pytest
-
 from kryten.mock import MockKrytenClient
 
 from kryten_playlist.admin_cmds import record_catalog_refresh_request
-from kryten_playlist.catalog_refresh_watcher import CatalogRefreshWatchState, process_catalog_refresh_marker
+from kryten_playlist.catalog_refresh_watcher import (
+    CatalogRefreshWatchState,
+    process_catalog_refresh_marker,
+)
 from kryten_playlist.nats.kv import BUCKET_SNAPSHOT, KvJson, KvNamespace
 
 

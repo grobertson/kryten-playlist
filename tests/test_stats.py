@@ -2,11 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock, MagicMock
-
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # Helper fixtures
@@ -61,7 +57,7 @@ async def test_increment_play_count(fake_kv):
 
 @pytest.mark.asyncio
 async def test_set_and_get_current_video(fake_kv):
-    from kryten_playlist.web.routes.stats import set_current_video, _get_current_video
+    from kryten_playlist.web.routes.stats import _get_current_video, set_current_video
 
     # Initially no video
     current = await _get_current_video(fake_kv)
@@ -79,7 +75,6 @@ async def test_set_and_get_current_video(fake_kv):
 
 @pytest.mark.asyncio
 async def test_like_increments_count(fake_kv):
-    from kryten_playlist.nats.kv import BUCKET_LIKES
     from kryten_playlist.web.routes.stats import (
         _get_like_counts,
         _set_like_counts,
@@ -103,13 +98,14 @@ async def test_like_increments_count(fake_kv):
 
 @pytest.mark.asyncio
 async def test_like_dedupe(fake_kv):
+    from datetime import timedelta
+
     from kryten_playlist.web.routes.stats import (
         _get_user_like_key,
+        _isoformat,
         _set_user_like_key,
         _utcnow,
-        _isoformat,
     )
-    from datetime import timedelta
 
     username = "testuser"
     video_id = "movie1"
@@ -170,9 +166,9 @@ async def test_like_counts_sorted():
 @pytest.mark.asyncio
 async def test_clear_current_video(fake_kv):
     from kryten_playlist.web.routes.stats import (
-        set_current_video,
-        clear_current_video,
         _get_current_video,
+        clear_current_video,
+        set_current_video,
     )
 
     await set_current_video(fake_kv, "abc", "Title")

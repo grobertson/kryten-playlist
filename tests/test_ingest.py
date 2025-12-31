@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 import re
-from io import StringIO
 from pathlib import Path
 
 import aiosqlite
 import pytest
 
-from kryten_playlist.catalog.enhanced_schema import init_enhanced_schema
 from kryten_playlist.catalog.ingest import (
     ingest_catalog,
     search_catalog,

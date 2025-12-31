@@ -56,7 +56,7 @@ async def main_async() -> None:
 
     # Determine log level: CLI arg > Config > Default
     log_level = args.log_level or config_log_level or "INFO"
-    
+
     setup_logging(log_level)
 
     logger = logging.getLogger(__name__)

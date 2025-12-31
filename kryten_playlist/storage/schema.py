@@ -5,11 +5,11 @@ import aiosqlite
 
 async def init_catalog_schema(conn: aiosqlite.Connection) -> None:
     """Initialize catalog schema.
-    
+
     Supports two database schemas:
     1. Legacy: title, categories_json, manifest_url columns
     2. Enriched (kryten-llm): raw_title, sanitized_title, genre, etc.
-    
+
     For enriched databases, the FTS table catalog_fts is already present.
     """
     # Check if catalog_item table already exists with the enriched schema
@@ -17,12 +17,12 @@ async def init_catalog_schema(conn: aiosqlite.Connection) -> None:
         "SELECT name FROM sqlite_master WHERE type='table' AND name='catalog_item'"
     )
     table_exists = await cursor.fetchone()
-    
+
     if table_exists:
         # Table exists - check if it has the enriched schema (sanitized_title column)
         pragma_cursor = await conn.execute("PRAGMA table_info(catalog_item)")
         columns = {row[1] for row in await pragma_cursor.fetchall()}
-        
+
         if "sanitized_title" in columns:
             # Enriched schema from kryten-llm - create index on sanitized_title if needed
             await conn.execute(
@@ -51,11 +51,11 @@ async def init_catalog_schema(conn: aiosqlite.Connection) -> None:
             """
         )
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_catalog_title ON catalog_item(title)")
-    
+
     # Check if mediacms_category column exists in existing table (migration)
     cursor = await conn.execute("PRAGMA table_info(catalog_item)")
     columns = {row[1] for row in await cursor.fetchall()}
-    
+
     if "mediacms_category" not in columns:
         await conn.execute("ALTER TABLE catalog_item ADD COLUMN mediacms_category TEXT NULL")
         # Create index for filtering by category

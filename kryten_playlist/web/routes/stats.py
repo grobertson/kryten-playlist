@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import json
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 
 from kryten_playlist.domain.schemas import (
     CurrentVideoOut,

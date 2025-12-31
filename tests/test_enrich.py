@@ -14,7 +14,6 @@ from kryten_playlist.catalog.enrich import (
     EnrichmentResult,
     LLMClient,
     enrich_item,
-    enrich_sample,
     enrich_single,
     show_enriched_stats,
 )

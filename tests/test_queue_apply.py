@@ -4,12 +4,11 @@ from datetime import datetime, timezone
 
 import aiosqlite
 import pytest
-
 from kryten.mock import MockKrytenClient
 
+from kryten_playlist.catalog.enhanced_schema import init_enhanced_schema
 from kryten_playlist.nats.kv import BUCKET_PLAYLISTS, KvJson, KvNamespace
 from kryten_playlist.queue_apply import apply_playlist_to_queue
-from kryten_playlist.catalog.enhanced_schema import init_enhanced_schema
 
 
 async def _sqlite_memory() -> aiosqlite.Connection:
@@ -31,9 +30,9 @@ async def _insert_catalog_item(
     await conn.execute(
         """
         INSERT INTO catalog_item(
-            video_id, raw_title, sanitized_title, title_base, 
+            video_id, raw_title, sanitized_title, title_base,
             snapshot_id, created_at, mediacms_category
-        ) 
+        )
         VALUES(?, ?, ?, ?, ?, ?, ?)
         """,
         (

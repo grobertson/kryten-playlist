@@ -1,5 +1,4 @@
 import asyncio
-import os
 from pathlib import Path
 
 import click
@@ -83,10 +82,10 @@ def ingest_cmd(
 @click.option("--humanizer-jitter", default=0, help="Random jitter in milliseconds to add to delay")
 @click.pass_context
 def enrich_group(
-    ctx: click.Context, 
-    api_key: str | None, 
-    api_base: str, 
-    model: str, 
+    ctx: click.Context,
+    api_key: str | None,
+    api_base: str,
+    model: str,
     timeout: float,
     alternate_api_key: str | None,
     alternate_api_base: str | None,
@@ -100,15 +99,15 @@ def enrich_group(
     """Enrich catalog items using LLM."""
     ctx.obj["rate_limit_delay"] = rate_limit_delay
     ctx.obj["humanizer_jitter"] = humanizer_jitter
-    
+
     # Debug config loading
     # logger.info(f"Rate limit: {rate_limit_delay}, Jitter: {humanizer_jitter}")
-    
+
     if api_key:
         ctx.obj["llm"] = enrich.LLMClient(
             api_key=api_key, api_base=api_base, model=model, timeout=timeout
         )
-        
+
     # Setup alternate client
     if alternate_model:
         ctx.obj["alternate_llm"] = enrich.LLMClient(
@@ -117,7 +116,7 @@ def enrich_group(
             model=alternate_model,
             timeout=timeout
         )
-        
+
     # Setup verifier client
     if verify_model:
         ctx.obj["verifier_llm"] = enrich.LLMClient(
@@ -166,14 +165,14 @@ def enrich_sample_cmd(
 ) -> None:
     """Enrich a random sample of items."""
     llm = _require_llm(ctx)
-    
+
     # Setup verifier client if model provided
     verifier_client = None
     if verify_model:
         verifier_client = enrich.LLMClient(
-            api_key=llm.api_key, 
-            api_base=llm.api_base, 
-            model=verify_model, 
+            api_key=llm.api_key,
+            api_base=llm.api_base,
+            model=verify_model,
             timeout=llm.timeout
         )
     elif "verifier_llm" in ctx.obj:
@@ -190,7 +189,7 @@ def enrich_sample_cmd(
     # Note: enrich_sample doesn't accept delay/jitter arguments directly, so we use ctx settings
     delay = ctx.obj.get("rate_limit_delay", 0.0)
     jitter = ctx.obj.get("humanizer_jitter", 0)
-        
+
     asyncio.run(
         enrich.enrich_sample(
             ctx.obj["db"],
@@ -242,21 +241,21 @@ def enrich_batch_cmd(
 ) -> None:
     """Batch enrich catalog items."""
     llm = _require_llm(ctx)
-    
+
     # Resolve delay and jitter from config/context if not provided
     if delay is None:
         delay = ctx.obj.get("rate_limit_delay", 0.5)
-        
+
     jitter = ctx.obj.get("humanizer_jitter", 0)
 
-    
+
     # Setup verifier client if model provided
     verifier_client = None
     if verify_model:
         verifier_client = enrich.LLMClient(
-            api_key=llm.api_key, 
-            api_base=llm.api_base, 
-            model=verify_model, 
+            api_key=llm.api_key,
+            api_base=llm.api_base,
+            model=verify_model,
             timeout=llm.timeout
         )
         verify = True # Auto-enable verify flag
@@ -368,7 +367,7 @@ def enrich_batch_standalone(
     llm = enrich.LLMClient(
         api_key=api_key, api_base=api_base, model=model, timeout=timeout
     )
-    
+
     if random_dry_run:
         dry_run = True
 

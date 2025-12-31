@@ -1,8 +1,8 @@
 import asyncio
 import json
 import logging
+
 from nats.aio.client import Client as NATS
-from nats.js import api
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("kv_check")
@@ -12,7 +12,7 @@ async def check_kv():
     try:
         await nc.connect("nats://localhost:4222")
         js = nc.jetstream()
-        
+
         # Access the playlist bucket (case sensitive!)
         bucket_name = "kryten_AKWHR89327M_playlist"
         try:

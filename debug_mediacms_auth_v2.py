@@ -1,7 +1,8 @@
 
 import asyncio
-import httpx
 import logging
+
+import httpx
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -16,8 +17,8 @@ async def test_auth():
         # 1. Login
         login_url = f"{BASE_URL}/api/v1/login"
         data = {"username": USERNAME, "password": PASSWORD}
-        
-        logger.info(f"Logging in...")
+
+        logger.info("Logging in...")
         resp = await client.post(login_url, data=data)
         if resp.status_code != 200:
             logger.error(f"Login failed: {resp.text}")
@@ -40,7 +41,7 @@ async def test_auth():
 
         for headers in test_headers:
             logger.info(f"Testing headers: {headers}")
-            
+
             # Test media list
             try:
                 r = await client.get(url, headers=headers, params={"limit": 1})

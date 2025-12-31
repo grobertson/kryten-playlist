@@ -7,11 +7,11 @@ from typing import Any
 
 from fastapi import Depends, HTTPException, Request
 
-logger = logging.getLogger(__name__)
-
 from kryten_playlist.auth.otp import parse_iso, utcnow
 from kryten_playlist.domain.schemas import Role
 from kryten_playlist.nats.kv import BUCKET_ACL, BUCKET_AUTH, KvJson
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -126,7 +126,7 @@ async def get_current_session(request: Request, kv: KvJson) -> Session:
 
 async def require_session(request: Request) -> Session:
     config = get_config(request)
-    
+
     # Check if authentication is disabled for testing
     logger.debug(f"DEBUG: disable_auth config value: {config.disable_auth}")
     if config.disable_auth:
@@ -138,7 +138,7 @@ async def require_session(request: Request) -> Session:
             role="admin",  # Give admin privileges for testing
             expires_at=datetime.now(timezone.utc).replace(year=2099)  # Far future expiry
         )
-    
+
     logger.debug("DEBUG: Authentication enabled, proceeding with normal auth")
     kv = get_kv(request)
     return await get_current_session(request, kv)

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from kryten_playlist.catalog.title_sanitizer import parse_title, sanitize_title
 
 

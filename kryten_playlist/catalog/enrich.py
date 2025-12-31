@@ -33,10 +33,10 @@ import json
 import logging
 import os
 import random
+import re
 import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 import aiosqlite
@@ -58,7 +58,7 @@ CRITICAL INSTRUCTIONS:
 2. STRICT DISAMBIGUATION:
    - YEAR: If a year is provided (e.g. "Title (1988)"), you MUST provide metadata for THAT specific version. Do NOT provide data for a modern reboot (e.g. 2024) or an earlier original.
    - MEDIUM: Distinguish between Animated and Live-Action. If the title is an animated series, do NOT list the cast of a live-action movie adaptation (and vice versa).
-   - TYPE: 
+   - TYPE:
      * "TV Movie" (made for television) is TV content.
      * "Miniseries" is TV content.
      * "Movie" implies a theatrical release.
@@ -100,16 +100,18 @@ class EnrichmentResult:
             return f"❌ {self.title}\n   Error: {self.error}"
 
         d = self.data or {}
-        
+
         # Prepare comparison if original data is provided
         diff_lines = []
         if original_data:
             changes = []
-            
+
             # Helper to format value
             def fmt_val(v: Any) -> str:
-                if v is None: return "None"
-                if isinstance(v, list): return ", ".join(str(x) for x in v[:3]) + ("..." if len(v)>3 else "")
+                if v is None:
+                    return "None"
+                if isinstance(v, list):
+                    return ", ".join(str(x) for x in v[:3]) + ("..." if len(v) > 3 else "")
                 return str(v)
 
             # Compare key fields
@@ -117,18 +119,18 @@ class EnrichmentResult:
             for field in fields:
                 old_val = original_data.get(field)
                 new_val = d.get(field)
-                
+
                 # Normalize for comparison
                 old_cmp = str(old_val).strip() if old_val else ""
                 new_cmp = str(new_val).strip() if new_val else ""
-                
+
                 if field == "synopsis":
                     # For synopsis, just check if it changed significantly (length or content)
                     if old_cmp and new_cmp and old_cmp != new_cmp:
-                         changes.append(f"   📝 Synopsis updated")
+                         changes.append("   📝 Synopsis updated")
                 elif old_cmp != new_cmp and (old_cmp or new_cmp):
                     changes.append(f"   🔄 {field.title()}: {fmt_val(old_val)} -> {fmt_val(new_val)}")
-            
+
             if changes:
                 diff_lines.append("\n   --- Changes from previous data ---")
                 diff_lines.extend(changes)
@@ -142,7 +144,7 @@ class EnrichmentResult:
                      if str(d[k]).strip() == str(v).strip():
                          continue
                      ver_changes.append(f"   🕵️ Verified {k}: {str(v)} -> {str(d[k])}")
-             
+
              if ver_changes:
                  diff_lines.append("\n   --- Verification Corrections ---")
                  diff_lines.extend(ver_changes)
@@ -159,17 +161,17 @@ class EnrichmentResult:
             f"\n{'='*70}",
             f"📌 {self.title}",
         ]
-        
+
         media_type_label = d.get("media_type", "Unknown")
-        
+
         if d.get("_is_tv_corrected"):
              lines.append(f"   ✨ FIXED: Identified as '{media_type_label}' (Rating: {d.get('content_rating')}), switching type to TV Show")
-        
+
         if d.get("_is_movie_corrected"):
              lines.append(f"   🎬 FIXED: Identified as '{media_type_label}' (Rating: {d.get('content_rating')}), switching type to Movie")
 
         lines.append(f"   Type: {media_type_label} | Genre: {d.get('genre', '?')} | Mood: {d.get('mood', '?')} | Era: {d.get('era', '?')} | Rating: {d.get('content_rating', '?')}")
-        
+
         synopsis = d.get('synopsis') or 'N/A'
         lines.append(f"   Synopsis: {synopsis}")
 
@@ -177,7 +179,7 @@ class EnrichmentResult:
         if not isinstance(tags, list):
             tags = []
         lines.append(f"   Tags: {', '.join(str(t) for t in tags)}")
-        
+
         if d.get("director"):
             lines.append(f"   Director: {d['director']}")
         if d.get("cast_list"):
@@ -188,14 +190,12 @@ class EnrichmentResult:
                 lines.append(f"   Cast: {cast}")
         if d.get("notes"):
             lines.append(f"   Notes: {d['notes'][:100]}")
-            
+
         # Add comparison if available
         lines.extend(diff_lines)
-            
+
         return "\n".join(lines)
 
-
-import re
 
 def sanitize_json_string(s: str) -> str:
     """Aggressively sanitize JSON string by removing all special characters."""
@@ -203,23 +203,23 @@ def sanitize_json_string(s: str) -> str:
     # We remove ALL control characters including \n \r \t because they break JSON if unescaped
     # and we don't need formatting in the raw string for metadata.
     # We replace them with spaces to preserve word separation.
-    
+
     # Replace common whitespace controls with space
     s = s.replace('\r', ' ')
     s = s.replace('\n', ' ')
     s = s.replace('\t', ' ')
-    
+
     # Remove all other control characters
     s = re.sub(r'[\x00-\x1f\x7f]', '', s)
-    
+
     # Handle invalid backslash escapes often produced by LLMs
     # \' -> '
     s = s.replace("\\'", "'")
-    
+
     # Some models produce fancy quotes
     s = s.replace('“', '"').replace('”', '"')
     s = s.replace("‘", "'").replace("’", "'")
-    
+
     return s
 
     # Step 4: Handle unescaped quotes inside strings.
@@ -227,9 +227,9 @@ def sanitize_json_string(s: str) -> str:
     # because of an unescaped double quote inside it, e.g. "synopsis": "The "best" movie".
     # This is extremely hard to fix perfectly with regex without a parser.
     # But for common cases like titles with quotes, we can try.
-    # For now, we rely on the LLM being mostly correct, but if we see this error, it's usually unrecoverable 
+    # For now, we rely on the LLM being mostly correct, but if we see this error, it's usually unrecoverable
     # without complex heuristics.
-    
+
     return s
 
 
@@ -260,7 +260,7 @@ class LLMClient:
              # If base is https://openrouter.ai, we need to add api/v1
              if "/api/v1" not in self.api_base:
                  url = f"{self.api_base}/api/v1/chat/completions"
-        
+
         # If the user provided the full endpoint URL in api_base (e.g. /chat/completions), use it directly
         if self.api_base.endswith("/chat/completions"):
             url = self.api_base
@@ -285,28 +285,28 @@ class LLMClient:
                     logger.error("Status: %s", resp.status_code)
                     logger.error("Response Body: %s", resp.text)
                     resp.raise_for_status()
-                
+
                 data = resp.json()
-                
+
                 if "choices" not in data or not data["choices"]:
                     logger.error("Invalid LLM response format: %s", json.dumps(data))
                     raise ValueError("LLM response missing 'choices'")
-                    
+
                 return data["choices"][0]["message"]["content"]
-                
+
         except httpx.RequestError as e:
             logger.error("Network error while calling LLM: %s", e)
             raise
 
     async def enrich(self, title: str, is_tv: bool, year: int | None = None, verify: bool = False, verifier_client: LLMClient | None = None, alternate_client: LLMClient | None = None) -> tuple[dict[str, Any], dict[str, Any] | None]:
         """Call LLM to get enrichment data for a title.
-        
+
         Returns:
             Tuple of (final_data, original_data_if_verified)
         """
         media_type = "TV episode" if is_tv else "movie"
         year_hint = f" ({year})" if year else ""
-        
+
         # Enhanced user prompt for disambiguation
         user_prompt = (
             f"Provide metadata for this {media_type}: '{title}'{year_hint}. "
@@ -317,13 +317,13 @@ class LLMClient:
         )
 
         logger.info("Enriching %s with model %s at %s", title, self.model, self.api_base)
-        
+
         # First pass
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
         ]
-        
+
         try:
             content = await self._call_llm(messages)
             data = self._parse_json_content(content)
@@ -341,15 +341,15 @@ class LLMClient:
                 raise e
 
         original_data = None
-        
+
         # Optional verification pass
         if verify:
             original_data = data.copy() # Keep copy of original
-            
+
             # Use the verifier client if provided, otherwise self
             v_client = verifier_client if verifier_client else self
             v_model_name = v_client.model
-            
+
             logger.info("Verifying metadata for %s with model %s...", title, v_model_name)
             verify_prompt = (
                 f"Review the following metadata for '{title}' {year_hint}. "
@@ -363,12 +363,12 @@ class LLMClient:
                 "Return ONLY the corrected JSON.\n\n"
                 f"{json.dumps(data, indent=2)}"
             )
-            
+
             verify_messages = [
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": verify_prompt}
             ]
-            
+
             try:
                 content = await v_client._call_llm(verify_messages)
                 data = self._parse_json_content(content)
@@ -395,13 +395,13 @@ class LLMClient:
             # If no code blocks, look for the first '{' and last '}'
             start_idx = content.find('{')
             end_idx = content.rfind('}')
-            
+
             if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
                 content = content[start_idx : end_idx + 1]
-        
+
         # Sanitize content before parsing
         content = sanitize_json_string(content.strip())
-        
+
         if not content:
             logger.error("Content became empty after sanitization")
             raise ValueError("Content became empty after sanitization")
@@ -410,29 +410,29 @@ class LLMClient:
             parsed = json.loads(content)
         except json.JSONDecodeError as e:
             logger.warning("Standard JSON parse failed: %s. Attempting repair with json_repair...", e)
-            
+
             try:
                 # json_repair is much more robust at handling unescaped quotes, missing braces, etc.
                 parsed = json_repair.loads(content)
                 logger.info("JSON successfully repaired.")
             except Exception as repair_error:
                 logger.error("Failed to repair JSON: %s", repair_error)
-                
+
                 # Log detailed debug info for the original error
                 logger.error("Original JSON Error: %s", e)
                 logger.error("Error at position %d, line %d, col %d", e.pos, e.lineno, e.colno)
-                
+
                 # Extract context around the error
                 start = max(0, e.pos - 20)
                 end = min(len(content), e.pos + 20)
                 context = content[start:end]
                 logger.error("Context around error: ...%s...", repr(context))
-                
+
                 # Log the character causing the issue if possible
                 if e.pos < len(content):
                     bad_char = content[e.pos]
                     logger.error("Bad character code: %r (int: %d)", bad_char, ord(bad_char))
-                
+
                 logger.error("Raw content: %s", content)
                 raise ValueError(f"Failed to parse LLM response as JSON (even after repair): {e}")
 
@@ -440,7 +440,7 @@ class LLMClient:
         if not isinstance(parsed, dict):
              logger.error("LLM returned a non-dict JSON object: %s (type: %s)", parsed, type(parsed))
              raise ValueError(f"LLM returned invalid JSON type: {type(parsed).__name__}. Expected dict/object.")
-             
+
         return parsed
 
 
@@ -459,17 +459,17 @@ async def enrich_item(
     """Enrich a single catalog item."""
     try:
         data, original_llm_data = await llm.enrich(title, is_tv, year, verify=verify, verifier_client=verifier_client, alternate_client=alternate_client)
-        
+
         # Check if we need to fix the TV flag
         content_rating = str(data.get("content_rating", "")).upper()
         media_type = str(data.get("media_type", "")).lower()
-        
+
         is_tv_corrected = False
         is_movie_corrected = False
-        
+
         movie_ratings = ["G", "PG", "PG-13", "R", "NC-17", "R-17", "X", "NR", "UNRATED"]
         tv_types = ["tv series", "tv movie", "tv special", "miniseries"]
-        
+
         # Priority 1: Media Type explicitly returned by LLM
         if media_type in tv_types and not is_tv:
              is_tv_corrected = True
@@ -477,7 +477,7 @@ async def enrich_item(
         elif media_type == "movie" and is_tv:
              is_movie_corrected = True
              data["_is_movie_corrected"] = True
-        
+
         # Priority 2: Fallback to Content Rating if Media Type is ambiguous/missing
         elif content_rating.startswith("TV-") and not is_tv:
             is_tv_corrected = True
@@ -486,18 +486,18 @@ async def enrich_item(
         elif content_rating in movie_ratings and is_tv:
             is_movie_corrected = True
             data["_is_movie_corrected"] = True
-            
+
         if not dry_run:
             # Update the database
             now = datetime.now(timezone.utc).isoformat()
-            
+
             # If we detected it's a TV show but it wasn't marked as one, fix it
             if is_tv_corrected:
                 await conn.execute(
                     "UPDATE catalog_item SET is_tv = 1 WHERE video_id = ?",
                     (video_id,)
                 )
-            
+
             # If we detected it's a Movie but it was marked as TV, fix it
             if is_movie_corrected:
                 await conn.execute(
@@ -615,7 +615,7 @@ async def enrich_sample(
     """Enrich a random sample of items."""
     # We can reuse enrich_batch logic by setting limit=count, random_order=True
     # and properly setting the filters.
-    
+
     await enrich_batch(
         db_path=db_path,
         llm=llm,
@@ -625,7 +625,7 @@ async def enrich_sample(
         delay=delay, # Use provided delay
         concurrency=concurrency,
         dry_run=dry_run,
-        force_all=not unenriched_only, 
+        force_all=not unenriched_only,
         raw_output=False,
         random_order=True,
         verify=verifier_client is not None, # Auto-enable verify if client provided
@@ -643,14 +643,14 @@ def format_time_human(td: datetime.timedelta) -> str:
     hours = total_seconds // 3600
     minutes = (total_seconds % 3600) // 60
     seconds = total_seconds % 60
-    
+
     parts = []
     if hours > 0:
         parts.append(f"{hours}h")
     if minutes > 0 or hours > 0:
         parts.append(f"{minutes}m")
     parts.append(f"{seconds}s")
-    
+
     if not parts:
         return "0s"
     return " ".join(parts)
@@ -660,11 +660,11 @@ def format_rate(rate_per_sec: float) -> str:
     """Format rate (items/sec) to human readable string."""
     if rate_per_sec >= 1.0:
         return f"{rate_per_sec:.1f} items/sec"
-    
+
     rate_per_min = rate_per_sec * 60
     if rate_per_min >= 1.0:
         return f"{rate_per_min:.1f} items/min"
-        
+
     rate_per_hour = rate_per_min * 60
     return f"{rate_per_hour:.1f} items/hour"
 
@@ -677,7 +677,7 @@ def format_avg_time(seconds_per_item: float) -> str:
         return f"{seconds_per_item*1000:.0f} ms/item"
     if seconds_per_item < 60.0:
         return f"{seconds_per_item:.1f} s/item"
-    
+
     minutes = seconds_per_item / 60
     return f"{minutes:.1f} m/item"
 
@@ -702,7 +702,7 @@ async def enrich_batch(
     jitter: int = 0,
 ) -> None:
     """Enrich items with optional concurrency.
-    
+
     Args:
         db_path: Path to SQLite database
         llm: LLM client instance
@@ -729,7 +729,7 @@ async def enrich_batch(
             conditions.append("llm_enriched_at IS NOT NULL")
         elif not force_all:
             conditions.append("llm_enriched_at IS NULL")
-            
+
         if tv_only:
             conditions.append("is_tv = 1")
         if movies_only:
@@ -749,7 +749,7 @@ async def enrich_batch(
         limit_clause = f"LIMIT {limit}" if limit else ""
         actual_count = min(total, limit) if limit else total
 
-        print(f"\n🚀 Starting batch enrichment")
+        print("\n🚀 Starting batch enrichment")
         print(f"   Total matching: {total}")
         print(f"   Processing: {actual_count}")
         print(f"   Mode: {'RE-PROCESS ALL' if force_all else 'Unenriched only'}")
@@ -766,7 +766,7 @@ async def enrich_batch(
         # Use cursor iteration instead of fetchall to handle large datasets
         # But for concurrency, we need to buffer some items
         # Strategy: Fetch in chunks of batch_size
-        
+
         # Shared state for progress tracking
         completed = 0
         success_count = 0
@@ -786,13 +786,13 @@ async def enrich_batch(
                 # Initial startup delay (staggered)
                 if idx < concurrency and concurrency > 1:
                      await asyncio.sleep(0.5 * idx)
-                
+
                 # Rate limit delay
                 if delay > 0 or jitter > 0:
                     wait_time = delay
                     if jitter > 0:
                         wait_time += random.uniform(0, jitter / 1000.0)
-                    
+
                     if wait_time > 0:
                         await asyncio.sleep(wait_time)
 
@@ -817,7 +817,7 @@ async def enrich_batch(
                             # This happens if 'row' is just a tuple of values, not a Row object with keys.
                             # But we set conn.row_factory in other places. Let's check if it's set here.
                             # It's not explicitly set in enrich_batch.
-                            
+
                             # Fallback: manual mapping
                             keys = ["genre", "mood", "era", "content_rating", "synopsis", "director", "cast_list"]
                             original_data = {k: row[i] for i, k in enumerate(keys)}
@@ -826,7 +826,7 @@ async def enrich_batch(
                         if original_data.get("cast_list"):
                             try:
                                 original_data["cast_list"] = json.loads(original_data["cast_list"])
-                            except:
+                            except Exception:
                                 pass
 
                 result = await enrich_item(conn, llm, video_id, title, bool(is_tv), year, dry_run=dry_run, verify=verify, verifier_client=verifier_client, alternate_client=alternate_client)
@@ -852,7 +852,7 @@ async def enrich_batch(
                         year_str = f"({year})"
                     else:
                         year_str = ""
-                    
+
                     print(f"\n[{completed}/{actual_count}] {media_type} {title} {year_str}")
                     print(result.display(original_data=original_data))
 
@@ -867,21 +867,21 @@ async def enrich_batch(
         # Fetch in chunks
         offset = 0
         remaining = actual_count
-        
+
         while remaining > 0:
             current_limit = min(batch_size, remaining)
-            
+
             # Note: OFFSET can be slow for large tables, but keyset pagination requires consistent ordering logic
             # Since we might use random ordering, OFFSET is necessary.
             # However, if we are updating items (llm_enriched_at IS NOT NULL), they will fall out of the filter criteria naturally
-            # if we re-run the query without OFFSET. 
+            # if we re-run the query without OFFSET.
             # BUT if dry_run=True, they stay.
             # AND if random_order=True, the order changes every query.
-            
+
             # To be safe and simple for now: fetch with LIMIT/OFFSET if dry_run or force_all
             # If standard mode (unenriched only) and not dry_run, we can just grab LIMIT batch_size repeatedly?
             # No, concurrent updates might not commit immediately, so they might still show up.
-            
+
             # Best approach: Fetch ALL IDs first (lightweight), then process in chunks.
             if offset == 0:
                 # Only run the query once to get IDs
@@ -896,23 +896,23 @@ async def enrich_batch(
                 )
                 all_rows = await id_cursor.fetchall()
                 # Now we iterate over this list in memory (it's list of tuples, memory efficient enough for <100k items)
-            
+
             chunk = all_rows[offset : offset + current_limit]
             if not chunk:
                 break
-                
+
             # Process chunk concurrently
             tasks = [
                 process_item(i + offset, video_id, title, is_tv, year)
                 for i, (video_id, title, is_tv, year) in enumerate(chunk)
             ]
-            
+
             await asyncio.gather(*tasks)
-            
+
             # Commit after each batch if not dry run
             if not dry_run:
                 await conn.commit()
-                
+
             offset += len(chunk)
             remaining -= len(chunk)
 
@@ -924,14 +924,14 @@ async def enrich_batch(
         failure_rate = (error_count / completed * 100) if completed > 0 else 0.0
 
         print(f"\n{'='*60}")
-        print(f"Batch complete!")
+        print("Batch complete!")
         print(f"   Enriched: {success_count}")
         print(f"   Errors: {error_count} ({failure_rate:.1f}%)")
         if tv_corrected_count > 0:
             print(f"   Fixed TV Types: {tv_corrected_count}")
         if movie_corrected_count > 0:
             print(f"   Fixed Movie Types: {movie_corrected_count}")
-        
+
         if raw_output:
             print(f"   Time: {elapsed}")
             print(f"   Rate: {items_per_second:.1f} items/sec")
@@ -981,7 +981,7 @@ async def show_enriched_stats(db_path: str) -> None:
         )
         moods = await cursor.fetchall()
 
-        print(f"\n📊 Enrichment Progress")
+        print("\n📊 Enrichment Progress")
         print("=" * 50)
         print(f"  Total items:     {total:,}")
         print(f"  Enriched:        {enriched:,} ({100*enriched/total:.1f}%)" if total else "")

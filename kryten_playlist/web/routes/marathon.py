@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
@@ -24,7 +22,7 @@ class MarathonSourceIn(BaseModel):
 
 
 class MarathonGenerateIn(BaseModel):
-    sources: list[MarathonSourceIn] = Field(..., min_items=1)
+    sources: list[MarathonSourceIn] = Field(..., min_length=1)
     method: str = "concatenate"
     shuffle_seed: str | None = None
     interleave_pattern: str | None = None

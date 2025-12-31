@@ -21,13 +21,13 @@ class CatalogRepository:
 
     async def _detect_schema(self) -> tuple[str, list[str]]:
         """Returns (title_selection, search_columns).
-        
-        Detects if we are using the legacy schema (title column) or 
+
+        Detects if we are using the legacy schema (title column) or
         enriched schema (sanitized_title/raw_title).
         """
         cursor = await self._conn.execute("PRAGMA table_info(catalog_item)")
         columns = {row["name"] for row in await cursor.fetchall()}
-        
+
         if "title" in columns:
             return "title", ["title"]
         elif "sanitized_title" in columns:
@@ -78,7 +78,7 @@ class CatalogRepository:
         vid = str(video_id).strip()
         if not vid:
             return None
-            
+
         title_sel, _ = await self._detect_schema()
         cursor = await self._conn.execute(
             f"SELECT video_id, {title_sel}, duration_seconds, thumbnail_url, snapshot_id, genre, mood, era, year, synopsis "
@@ -88,7 +88,7 @@ class CatalogRepository:
         r = await cursor.fetchone()
         if not r:
             return None
-            
+
         return {
             "video_id": r["video_id"],
             "title": r["title"],
@@ -144,7 +144,7 @@ class CatalogRepository:
 
         where = []
         params: list[object] = []
-        
+
         title_sel, search_cols = await self._detect_schema()
 
         if q:
@@ -162,28 +162,28 @@ class CatalogRepository:
             # Series typically implies title_base match
             where.append("title_base LIKE ?")
             params.append(f"%{series}%")
-            
+
         if title:
             # Specific title search (sanitized_title or raw_title)
             where.append("sanitized_title LIKE ?")
             params.append(f"%{title}%")
-            
+
         if actor:
             where.append("cast_list LIKE ?")
             params.append(f"%{actor}%")
-            
+
         if director:
             where.append("director LIKE ?")
             params.append(f"%{director}%")
-            
+
         if genre:
             where.append("genre LIKE ?")
             params.append(f"%{genre}%")
-            
+
         if mood:
             where.append("mood LIKE ?")
             params.append(f"%{mood}%")
-            
+
         if era:
             where.append("era LIKE ?")
             params.append(f"%{era}%")

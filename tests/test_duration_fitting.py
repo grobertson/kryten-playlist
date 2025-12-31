@@ -2,15 +2,15 @@
 
 from datetime import datetime, timedelta, timezone
 
+import aiosqlite
 import pytest
 import pytest_asyncio
-import aiosqlite
 
 from kryten_playlist.catalog.duration_fitting import (
     FitResult,
+    calculate_end_time,
     fit_to_duration,
     fit_to_end_time,
-    calculate_end_time,
     format_duration,
 )
 from kryten_playlist.catalog.enhanced_schema import init_enhanced_schema

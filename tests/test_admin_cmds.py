@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from kryten.mock import MockKrytenClient
 
 from kryten_playlist.admin_cmds import (

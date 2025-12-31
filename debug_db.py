@@ -1,6 +1,6 @@
 
-import sqlite3
 import os
+import sqlite3
 
 db_path = 'd:/Devel/kryten-playlist/catalog.db'
 

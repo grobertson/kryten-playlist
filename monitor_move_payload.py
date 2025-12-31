@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+
 from nats.aio.client import Client as NATS
 
 # Configure logging
@@ -9,7 +10,7 @@ logger = logging.getLogger("nats_monitor")
 
 async def run(loop):
     nc = NATS()
-    
+
     # Connect to NATS
     try:
         await nc.connect("nats://localhost:4222")
@@ -25,7 +26,7 @@ async def run(loop):
         try:
             json_data = json.loads(data)
             logger.info(f"Received on [{subject}]:\n{json.dumps(json_data, indent=2)}")
-        except:
+        except Exception:
             logger.info(f"Received on [{subject}]: {data}")
 
     # Subscribe to moveVideo events

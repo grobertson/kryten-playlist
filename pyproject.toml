@@ -47,7 +47,7 @@ disallow_untyped_defs = false
 
 [tool.ruff.lint]
 select = [ "E", "F", "W", "I", "N",]
-ignore = [ "E501",]
+ignore = [ "E501", "N814", "N815",]
 
 [tool.pytest.ini_options]
 testpaths = [ "tests",]

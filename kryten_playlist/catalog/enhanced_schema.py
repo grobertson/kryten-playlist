@@ -127,18 +127,18 @@ CREATE INDEX IF NOT EXISTS idx_catalog_item_genre ON catalog_item(genre);
 async def init_enhanced_schema(conn) -> None:
     """Initialize the enhanced catalog schema."""
     await conn.executescript(ENHANCED_SCHEMA)
-    
+
     # Migration: Check for mediacms_category column
     cursor = await conn.execute("PRAGMA table_info(catalog_item)")
     columns = {row[1] for row in await cursor.fetchall()}
-    
+
     if "mediacms_category" not in columns:
         await conn.execute("ALTER TABLE catalog_item ADD COLUMN mediacms_category TEXT NULL")
-    
+
     if "sanitized_category" not in columns:
         await conn.execute("ALTER TABLE catalog_item ADD COLUMN sanitized_category TEXT NULL")
-        
+
     await conn.execute("CREATE INDEX IF NOT EXISTS idx_catalog_item_mediacms_category ON catalog_item(mediacms_category)")
     await conn.execute("CREATE INDEX IF NOT EXISTS idx_catalog_item_sanitized_category ON catalog_item(sanitized_category)")
-    
+
     await conn.commit()

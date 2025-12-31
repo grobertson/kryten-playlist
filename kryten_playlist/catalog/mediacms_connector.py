@@ -69,10 +69,10 @@ class MediaCMSConnector:
         """
         base = self.base_url.rstrip("/")
         sem = asyncio.Semaphore(self.concurrency)
-        
+
         auth = None
         headers = self.get_auth_headers()
-        
+
         if not headers and self.username and self.password:
             auth = httpx.BasicAuth(self.username, self.password)
 
@@ -88,7 +88,7 @@ class MediaCMSConnector:
                     if details:
                         # Merge details into item, preferring details
                         item.update(details)
-                    
+
                     return self._parse_item(item, category_map)
 
             # Fetch media pages
@@ -197,12 +197,12 @@ class MediaCMSConnector:
 
     def _sanitize_category(self, category: str | None) -> str | None:
         """Remove leading numbers and dots from category names.
-        
+
         Example: "1.Family Comedies" -> "Family Comedies"
         """
         if not category:
             return category
-            
+
         # Match pattern like "1. ", "02.", "5." at the start
         # ^\d+\.\s* matches start of string, one or more digits, a dot, and optional whitespace
         return re.sub(r'^\d+\.\s*', '', category)

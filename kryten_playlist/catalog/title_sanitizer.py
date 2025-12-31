@@ -11,7 +11,6 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-
 # Common patterns to strip from titles
 _EXTENSIONS = re.compile(r"\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|ts|m2ts)$", re.I)
 _ENCODING = re.compile(
